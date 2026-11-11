@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Flora — Botanical Showcase</title>
+  <meta name="description" content="An immersive, interactive 3D showcase of the Dahlia, Gerbera and Chrysanthemum.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='16' cy='9' r='5'/%3E%3Ccircle cx='23' cy='16' r='5'/%3E%3Ccircle cx='16' cy='23' r='5'/%3E%3Ccircle cx='9' cy='16' r='5'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='3.5' fill='%23000'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="assets/img/dahlia-wide.jpg">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Observer.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body class="is-loading">
+
+  <!-- Preloader -->
+  <div class="loader" aria-hidden="true">
+    <div class="loader__inner">
+      <div class="loader__logo"><span>F</span><span>l</span><span>o</span><span>r</span><span>a</span></div>
+      <div class="loader__bar"><i></i></div>
+      <div class="loader__count"><span>0</span>%</div>
+    </div>
+  </div>
+
+  <!-- Custom cursor -->
+  <div class="cursor" aria-hidden="true"><span class="cursor__label">Drag</span></div>
+  <div class="cursor-dot" aria-hidden="true"></div>
+
+  <header class="header">
+    <a class="logo" href="#" data-nav="species" aria-label="Flora home">Flora</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#species" data-nav="species" class="is-active">Species</a>
+      <a href="#about" data-nav="about">About</a>
+      <a href="#blog" data-nav="blog">Blog</a>
+    </nav>
+  </header>
+
+  <main class="hero" id="species">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="stage" id="stage" aria-label="Interactive 3D flower — drag to rotate"></div>
+
+    <section class="info" aria-live="polite">
+      <div class="info__label"><i class="sq"></i><span class="js-family">Asteraceae</span></div>
+      <div class="info__title-wrap"></div>
+      <p class="info__desc js-desc"></p>
+      <dl class="info__meta js-meta"></dl>
+    </section>
+
+    <aside class="panel">
+      <div class="panel__thumbs">
+        <button class="thumb thumb--wide js-thumb-wide" type="button" aria-label="Open flower details" data-cursor="view"></button>
+        <button class="thumb thumb--tall js-thumb-tall" type="button" aria-label="Next flower" data-cursor="next"></button>
+      </div>
+      <h2 class="panel__title js-ptitle"></h2>
+      <p class="panel__text js-ptext"></p>
+      <div class="panel__quote"><i class="line"></i><span class="js-quote"></span></div>
+      <button class="btn js-detail" type="button"><span class="btn__text">View Detail</span><span class="btn__fill"></span></button>
+    </aside>
+
+    <div class="hint" aria-hidden="true"><i></i><span>Drag to explore</span></div>
+
+    <footer class="bottom">
+      <div class="slider-nav">
+        <div class="dots js-dots" role="tablist" aria-label="Choose flower"></div>
+        <div class="counter"><span class="js-cur">01</span><i></i><span class="js-total">03</span></div>
+      </div>
+      <div class="share">
+        <span>Share on</span>
+        <a href="#" data-share="fb" aria-label="Share on Facebook">Fb</a>
+        <a href="#" data-share="tw" aria-label="Share on X / Twitter">Tw</a>
+        <a href="https://www.instagram.com/" data-share="ig" target="_blank" rel="noopener" aria-label="Instagram">Ig</a>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Flower detail overlay -->
+  <div class="overlay detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-title" aria-hidden="true">
+    <button class="overlay__close" type="button" data-close aria-label="Close"><span>Close</span><i></i></button>
+    <div class="detail__grid">
+      <div class="detail__media">
+        <div class="detail__hero"><img class="js-d-hero" src="" alt=""></div>
+        <div class="detail__minis">
+          <div class="detail__mini"><img class="js-d-macro" src="" alt=""></div>
+          <div class="detail__mini"><img class="js-d-wide" src="" alt=""></div>
+        </div>
+      </div>
+      <div class="detail__content">
+        <div class="info__label"><i class="sq"></i><span class="js-d-family"></span></div>
+        <h2 class="detail__title" id="detail-title"></h2>
+        <p class="detail__latin js-d-latin"></p>
+        <p class="detail__long js-d-long"></p>
+        <dl class="detail__specs js-d-specs"></dl>
+        <div class="detail__care">
+          <h3>Care notes</h3>
+          <p class="js-d-care"></p>
+        </div>
+        <div class="detail__nav">
+          <button type="button" class="link-btn js-d-prev"><i class="arrow arrow--l"></i>Previous</button>
+          <span class="js-d-count">01 / 03</span>
+          <button type="button" class="link-btn js-d-next">Next<i class="arrow"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- About overlay -->
+  <div class="overlay page" id="about" role="dialog" aria-modal="true" aria-labelledby="about-title" aria-hidden="true">
+    <button class="overlay__close" type="button" data-close aria-label="Close"><span>Close</span><i></i></button>
+    <div class="page__inner">
+      <p class="page__eyebrow"><i class="sq"></i>About Flora</p>
+      <h2 class="page__title" id="about-title">A quiet study of <em>form, colour</em> and the architecture of petals.</h2>
+      <div class="page__cols">
+        <div><h3>The idea</h3><p>Flora is a digital herbarium. Each species is rebuilt petal by petal in real time, so you can turn it in your hands, watch it open and study the geometry nature took millions of years to refine.</p></div>
+        <div><h3>The family</h3><p>Every flower here belongs to Asteraceae — the daisy family. What looks like a single bloom is in fact a composite head of hundreds of tiny florets working as one.</p></div>
+        <div><h3>The craft</h3><p>Procedural 3D petals, physically based light and cinematic transitions. No two petals are identical; each is shaped, cupped and coloured on its own.</p></div>
+      </div>
+      <div class="page__stats">
+        <div><b>32,000+</b><span>species in the family</span></div>
+        <div><b>1,900</b><span>genera worldwide</span></div>
+        <div><b>3</b><span>flowers in this collection</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blog overlay -->
+  <div class="overlay page" id="blog" role="dialog" aria-modal="true" aria-labelledby="blog-title" aria-hidden="true">
+    <button class="overlay__close" type="button" data-close aria-label="Close"><span>Close</span><i></i></button>
+    <div class="page__inner">
+      <p class="page__eyebrow"><i class="sq"></i>Journal</p>
+      <h2 class="page__title" id="blog-title">Notes from the <em>garden</em></h2>
+      <div class="cards">
+        <button class="card" type="button" data-open-flower="0">
+          <span class="card__img"><img src="assets/img/dahlia-macro.jpg" alt="Close-up of dahlia petals" loading="lazy"></span>
+          <span class="card__meta">Oct 2026 · 4 min read</span>
+          <span class="card__title">Why dahlias are built like a spiral staircase</span>
+          <span class="card__more">Read story<i class="arrow"></i></span>
+        </button>
+        <button class="card" type="button" data-open-flower="1">
+          <span class="card__img"><img src="assets/img/gerbera-macro.jpg" alt="Close-up of a gerbera centre" loading="lazy"></span>
+          <span class="card__meta">Sep 2026 · 3 min read</span>
+          <span class="card__title">The gerbera's secret: hundreds of flowers in one</span>
+          <span class="card__more">Read story<i class="arrow"></i></span>
+        </button>
+        <button class="card" type="button" data-open-flower="2">
+          <span class="card__img"><img src="assets/img/chrysanthemum-macro.jpg" alt="Close-up of chrysanthemum petals" loading="lazy"></span>
+          <span class="card__meta">Aug 2026 · 5 min read</span>
+          <span class="card__title">Chrysanthemum — the imperial flower of autumn</span>
+          <span class="card__more">Read story<i class="arrow"></i></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <noscript><p class="noscript">Flora needs JavaScript enabled to display the interactive 3D flowers.</p></noscript>
+</body>
+</html>
