@@ -20,7 +20,7 @@ To deploy, upload the folder as-is to any static host (Netlify, Vercel, GitHub P
 ## Structure
 
 ```
-index.html          markup, overlays, CDN imports (three@0.160.0, gsap@3.12.5)
+index.html          markup, overlays, import map
 css/style.css       layout, typography, responsive rules, cursor, overlays
 js/data.js          all flower content, colours and lighting palettes  ← edit text here
 js/flowers.js       procedural 3D flowers (petal geometry, shaders, bloom animation)
@@ -28,6 +28,7 @@ js/stage.js         renderer, lights, layout fitting, flower-to-flower transitio
 js/fallback.js      photo-based stage used when WebGL is unavailable
 js/main.js          UI orchestration: GSAP timelines, input, overlays, loader
 assets/img/         optimised photo crops (thumbnails, detail view, fallback)
+vendor/             self-hosted three.js r160 + GSAP 3.12.5 (no third-party CDN at runtime)
 reference/          the original brief material (not loaded by the site)
 ```
 
@@ -55,6 +56,7 @@ reference/          the original brief material (not loaded by the site)
 
 - Shaders are pre-compiled behind the loader, so the first transition doesn't stutter.
 - On slow GPUs the pixel ratio drops automatically, and pixel ratio is capped at 2×.
+- If the 3D engine isn't ready within 12 s (very slow network or GPU), the site opens with the photo stage instead of waiting.
 - Rendering pauses while an overlay covers the stage or the tab is hidden.
 - Without WebGL, the stage switches to the photographs and keeps the same transition choreography.
 - Users with `prefers-reduced-motion` get faster, shorter transitions.

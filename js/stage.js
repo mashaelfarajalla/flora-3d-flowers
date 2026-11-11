@@ -1,6 +1,5 @@
 // Three.js stage: renderer, lighting, layout and cinematic flower transitions.
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Flower } from './flowers.js';
 
 const gsap = window.gsap;
@@ -55,9 +54,8 @@ export class Stage {
     this.camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
     this.camera.position.set(0, 0, 9);
 
-    const pmrem = new THREE.PMREMGenerator(r);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(r), 0.04).texture;
-    pmrem.dispose();
+    // No PMREM environment: it cost ~0.6s on weak GPUs. Soft sky/ground light +
+    // a gentle front fill give the same studio look much faster.
 
     // Lighting: soft cinematic key, coloured rims from behind.
     const L = data[0].light;
@@ -73,8 +71,10 @@ export class Stage {
     this.fill.position.set(4, -1.5, 3);
     this.rim = new THREE.DirectionalLight(L.rim, 3.2);
     this.rim.position.set(2.5, 3, -5);
-    this.hemi = new THREE.HemisphereLight('#ffffff', '#0a0a0a', 0.35);
-    this.scene.add(this.key, this.fill, this.rim, this.hemi);
+    this.hemi = new THREE.HemisphereLight('#ffffff', '#1a1a1a', 0.9);
+    this.front = new THREE.DirectionalLight('#ffffff', 0.8);
+    this.front.position.set(0.5, 0.5, 8);
+    this.scene.add(this.key, this.fill, this.rim, this.hemi, this.front);
 
     this.world = new THREE.Group();
     this.scene.add(this.world);
@@ -97,8 +97,12 @@ export class Stage {
   async warmup() {
     this.flowers.forEach((f) => { f.root.visible = true; });
     try {
-      if (this.renderer.compileAsync) await this.renderer.compileAsync(this.scene, this.camera);
-      else this.renderer.compile(this.scene, this.camera);
+      if (this.renderer.compileAsync) {
+        await Promise.race([
+          this.renderer.compileAsync(this.scene, this.camera),
+          new Promise((res) => setTimeout(res, 4000)),
+        ]);
+      } else this.renderer.compile(this.scene, this.camera);
     } catch (e) {
       this.renderer.compile(this.scene, this.camera);
     }

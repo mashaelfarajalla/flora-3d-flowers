@@ -4,6 +4,9 @@ import { ImageStage } from './fallback.js';
 const gsap = window.gsap;
 const { ScrollTrigger, Observer } = window;
 gsap.registerPlugin(ScrollTrigger, Observer);
+// The WebGL loop renders every frame anyway; never let GSAP's ticker fall asleep
+// (it could fail to wake for the loader on some machines and stall at 95%).
+gsap.config({ autoSleep: 1e9 });
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -22,19 +25,40 @@ let openOverlay = null;
 /* ================================================================ */
 /* Stage (WebGL with graceful fallback)                              */
 /* ================================================================ */
-async function createStage() {
+let stageAbandoned = false;
+
+async function createStage(onStep = () => {}) {
   const el = $('#stage');
   try {
-    const { Stage, hasWebGL } = await import('./stage.js');
-    if (!hasWebGL()) throw new Error('WebGL unavailable');
-    const st = new Stage(el, FLOWERS);
-    await st.warmup();
-    return st;
+    // Never let a slow network or GPU hold the loader hostage.
+    return await Promise.race([
+      createWebGLStage(el, onStep),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('3D engine took too long')), 12000)),
+    ]);
   } catch (err) {
+    stageAbandoned = true;
     console.info('[Flora] Using image fallback:', err.message);
-    el.innerHTML = '';
+    el.querySelectorAll('canvas').forEach((c) => c.remove());
     return new ImageStage(el, FLOWERS);
   }
+}
+
+async function createWebGLStage(el, onStep) {
+  const { Stage, hasWebGL } = await import('./stage.js');
+  onStep();
+  if (!hasWebGL()) throw new Error('WebGL unavailable');
+  await new Promise(requestAnimationFrame); // let the loader paint
+  const st = new Stage(el, FLOWERS);
+  onStep();
+  await new Promise(requestAnimationFrame);
+  await st.warmup();
+  onStep();
+  if (stageAbandoned) { // arrived after the fallback took over
+    st.renderer.setAnimationLoop(null);
+    st.renderer.domElement.remove();
+    st.renderer.dispose();
+  }
+  return st;
 }
 
 /* ================================================================ */
@@ -429,17 +453,16 @@ function initScroll() {
 /* ================================================================ */
 /* Preload + intro                                                   */
 /* ================================================================ */
-function preload(onProgress) {
+function preload(tick) {
   const srcs = FLOWERS.flatMap((f) => [img(f.id, 'wide'), img(f.id, 'tall')]);
-  let done = 0;
-  const total = srcs.length + 1;
-  const tick = () => onProgress(++done / total);
   const imgs = srcs.map((s) => new Promise((res) => {
     const i = new Image();
     i.onload = i.onerror = () => { tick(); res(); };
     i.src = s;
   }));
-  const fonts = (document.fonts ? document.fonts.ready : Promise.resolve()).then(tick);
+  // Wrap tick: it must not return the GSAP tween (a thenable), or this promise
+  // would wait on a tween that later gets overwritten and never resolve.
+  const fonts = (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { tick(); });
   return Promise.all([...imgs, fonts]);
 }
 
@@ -462,15 +485,24 @@ async function init() {
     onUpdate: () => { counter.textContent = Math.round(prog.v * 100); gsap.set(bar, { scaleX: prog.v }); },
   });
 
+  // Progress = 6 images + fonts + 3 engine steps (load, build, compile).
+  let done = 0;
+  const TOTAL = FLOWERS.length * 2 + 1 + 3;
+  const step = () => { progressTo(Math.min(++done / TOTAL, 0.99)); };
   const [st] = await Promise.all([
-    createStage(),
-    preload((p) => progressTo(p * 0.95)),
+    createStage(step),
+    preload(step),
     new Promise((r) => setTimeout(r, 900)),
   ]);
   stage = st;
   initInput(cursor);
   initScroll();
-  await new Promise((res) => progressTo(1).eventCallback('onComplete', res));
+  // Finish the counter, but never block the intro on a tween completing.
+  progressTo(1);
+  await new Promise((res) => setTimeout(res, 650));
+  gsap.ticker.wake();
+  counter.textContent = '100';
+  gsap.set(bar, { scaleX: 1 });
 
   const tl = gsap.timeline({ onComplete: () => document.body.classList.remove('is-loading') });
   tl.to('.loader__inner', { autoAlpha: 0, y: -20, duration: 0.6, ease: 'power2.in' })
